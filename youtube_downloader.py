@@ -17,7 +17,17 @@ class YoutubeDownloader:
             duration = info.get("duration")
             formats = []
             for format in info.get("formats", []):
-                formats.append(format.get('height'))
+                if format.get('filesize') is not None:
+                    formats.append([format.get('height'), round(format.get('filesize') / (1024 * 1024), 2)])
+
+            # if 'filesize' in info and info['filesize'] is not None:
+            #     size_bytes = info['filesize']
+            #     print(f"Exact video size: {size_bytes / (1024 * 1024):.2f} MB")
+            # elif 'filesize_approx' in info and info['filesize_approx'] is not None:
+            #     size_bytes = info['filesize_approx']
+            #     print(f"Approximate video size: {size_bytes / (1024 * 1024):.2f} MB")
+            # else:
+            #     print("Could not retrieve video size information.")
 
             return {
                 "title": title,

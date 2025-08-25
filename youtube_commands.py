@@ -39,20 +39,27 @@ async def youtube_url(message: Message, state: FSMContext):
     try:
         yd = YoutubeDownloader(url)
         video_data = yd.get_video_info()
-        video_data['formats'] = sorted([el for el in set(video_data['formats']) if el in [144, 360, 480, 720, 1080, 1440, 2160]])
+        # TODO: FIX ['formats'] processing
+        # video_data['formats'] = sorted([el for el in set(video_data['formats']) if el[0] in [144, 360, 480, 720, 1080, 1440, 2160] and el[1] is not None])
 
         res = []
         line = []
         for i, format in enumerate(video_data['formats']):
+            if format[1] < 49.5:
+                download_type = 1 # bot.send_video (fastest)
+            else: download_type = 0 # telethon sender
+
+            btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}mb.", callback_data=f"D|{download_type}|{url}|{format[0]}|{message.from_user.id}")
             if i % 2 == 0:
-                line = [InlineKeyboardButton(text=f"{format}p", callback_data=f"D|{url}|{format}|{message.from_user.id}"),]
+                line = [btn]
                 if i == len(video_data['formats']) - 1:
                     res.append(line)
             else:
-                line.append(InlineKeyboardButton(text=f"{format}p", callback_data=f"D|{url}|{format}|{message.from_user.id}"))
+                line.append(btn)
                 res.append(line)
                 line = []
         keyboard = InlineKeyboardMarkup(inline_keyboard=res)
+
         await message.answer_photo(photo=video_data["thumbnail"], caption=f"📹 <b>{video_data['title']}</b>\n👤 {video_data['uploader']}\n\n<b>Download formats ↓</b>", reply_markup=keyboard)
 
     except Exception as e:
@@ -63,12 +70,16 @@ async def youtube_url(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("D"))
 async def download_video_by_callback(query: CallbackQuery, bot: Bot):
     elements = query.data.split("|")
-    await bot.send_message(chat_id=elements[3], text=f'⏰ Downloading, please wait...')
-    yd = YoutubeDownloader(elements[1])
-    file_data = yd.download_video_by_resolution(elements[2])
+    await bot.send_message(chat_id=elements[4], text=f'⏰ Downloading, please wait...')
+    yd = YoutubeDownloader(elements[2])
+    file_data = yd.download_video_by_resolution(elements[3])
     h = int(elements[2])
     w = resolutions[h]
-    await send_video_telethon(query.from_user.id, f"{file_data['title']}.{file_data['ext']}", w, h, file_data['duration'])
+
+    if elements[0] == 0:
+        await send_video_telethon(query.from_user.id, f"{file_data['title']}.{file_data['ext']}", w, h, file_data['duration'])
+    else:
+        await bot.send_video(query.from_user.id, f"{file_data['title']}.{file_data['ext']}", width=w, height=h, duration=file_data['duration'], supports_streaming=True)
 
 
 @router.message(F.video)
