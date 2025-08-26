@@ -1,8 +1,8 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F, Bot, exceptions
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, FSInputFile
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, FSInputFile, InputFile, URLInputFile
 
 from youtube_downloader import YoutubeDownloader
 from telethon_sender import send_video_telethon
@@ -36,51 +36,60 @@ async def youtube_start(message: Message, state: FSMContext):
 async def youtube_url(message: Message, state: FSMContext):
     await state.clear()
     url = message.text
-    try:
-        yd = YoutubeDownloader(url)
-        video_data = yd.get_video_info()
-        # TODO: FIX ['formats'] processing
-        # video_data['formats'] = sorted([el for el in set(video_data['formats']) if el[0] in [144, 360, 480, 720, 1080, 1440, 2160] and el[1] is not None])
+    # try:
+    yd = YoutubeDownloader(url)
+    video_data = yd.get_video_info()
+    video_formats_list = [format for format in video_data['formats'] if format[0] in [144, 360, 480, 720, 1080, 1440, 2160] and format[1] is not None]
+    video_formats = []
+    resolutions = []
+    for format in video_formats_list:
+        if format[0] not in resolutions:
+            video_formats.append(format)
+            resolutions.append(format[0])
 
-        res = []
-        line = []
-        for i, format in enumerate(video_data['formats']):
-            if format[1] < 49.5:
-                download_type = 1 # bot.send_video (fastest)
-            else: download_type = 0 # telethon sender
 
-            btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}mb.", callback_data=f"D|{download_type}|{url}|{format[0]}|{message.from_user.id}")
-            if i % 2 == 0:
-                line = [btn]
-                if i == len(video_data['formats']) - 1:
-                    res.append(line)
-            else:
-                line.append(btn)
+    res = []
+    line = []
+    for i, format in enumerate(sorted(video_formats, reverse=True)):
+        if format[1] < 49.5:
+            download_type = 1 # bot.send_video (fastest)
+        else: download_type = 0 # telethon sender
+
+        btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}MB", callback_data=f"D|{download_type}|{url}|{format[0]}")
+        if i % 2 == 0:
+            line = [btn]
+            if i == len(video_formats) - 1:
                 res.append(line)
-                line = []
-        keyboard = InlineKeyboardMarkup(inline_keyboard=res)
+        else:
+            line.append(btn)
+            res.append(line)
+            line = []
+    keyboard = InlineKeyboardMarkup(inline_keyboard=res)
 
-        await message.answer_photo(photo=video_data["thumbnail"], caption=f"📹 <b>{video_data['title']}</b>\n👤 {video_data['uploader']}\n\n<b>Download formats ↓</b>", reply_markup=keyboard)
+    await message.answer_photo(photo=video_data["thumbnail"], caption=f"📹 <b>{video_data['title']}</b>\n👤 {video_data['uploader']}\n\n<b>Download formats ↓</b>", reply_markup=keyboard)
 
-    except Exception as e:
-        await message.answer('Wrong url, bro :(')
-        print(e)
+    # except Exception as e:
+    #     await message.answer('Wrong url, bro :(')
+    #     print(e)
 
 
 @router.callback_query(F.data.startswith("D"))
 async def download_video_by_callback(query: CallbackQuery, bot: Bot):
     elements = query.data.split("|")
-    await bot.send_message(chat_id=elements[4], text=f'⏰ Downloading, please wait...')
+    await bot.send_message(chat_id=query.from_user.id, text=f'⏰ Downloading, please wait...')
     yd = YoutubeDownloader(elements[2])
     file_data = yd.download_video_by_resolution(elements[3])
-    h = int(elements[2])
+    h = int(elements[3])
     w = resolutions[h]
 
+    filename = f"vids/{file_data['title']}_{elements[3]}.{file_data['ext']}"
     if elements[0] == 0:
-        await send_video_telethon(query.from_user.id, f"{file_data['title']}.{file_data['ext']}", w, h, file_data['duration'])
+        await send_video_telethon(query.from_user.id, filename, w, h, file_data['duration'], )
     else:
-        await bot.send_video(query.from_user.id, f"{file_data['title']}.{file_data['ext']}", width=w, height=h, duration=file_data['duration'], supports_streaming=True)
-
+        try:
+            await bot.send_video(query.from_user.id, FSInputFile(filename), width=w, height=h, duration=file_data['duration'], supports_streaming=True, thumbnail=URLInputFile(file_data['thumbnail']))
+        except exceptions.TelegramEntityTooLarge:
+            await send_video_telethon(query.from_user.id, filename, w, h, file_data['duration'])
 
 @router.message(F.video)
 async def youtube_video_get(message: Message, bot: Bot):

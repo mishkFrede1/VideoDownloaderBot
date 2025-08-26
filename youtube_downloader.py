@@ -9,7 +9,7 @@ class YoutubeDownloader:
         self.url = url
 
     def get_video_info(self):
-        with YoutubeDL() as ydl:
+        with YoutubeDL({"quiet": True, "skip_download": True}) as ydl:
             info = ydl.extract_info(self.url, download=False, process=False)
             title = info.get("title")
             thumbnail = info.get("thumbnail")
@@ -40,7 +40,7 @@ class YoutubeDownloader:
     def download_video_by_resolution(self, resolution):
         ydl_opts = {
             'format': f'bv*[height<={resolution}]+ba/best',
-            'outtmpl': '%(title)s.%(ext)s',
+            'outtmpl': 'vids/%(title)s_%(height)s.%(ext)s',
             'ffmpeg_location': r"H:\ffmpeg",
             'merge_output_format': 'mp4',
             'postprocessors': [{
@@ -53,8 +53,10 @@ class YoutubeDownloader:
             info = ydl.extract_info(self.url, download=False, process=False)
             title = info.get("title")
             duration = info.get("duration")
+            thumbnail = info.get("thumbnail")
             return {
                 "title": title,
                 "ext": "mp4",
                 "duration": duration,
+                "thumbnail": thumbnail
             }
