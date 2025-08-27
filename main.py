@@ -5,7 +5,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
-import youtube_commands
+from media_parsers.youtube import youtube_handlers
+from handlers import links_handler
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -16,7 +17,10 @@ dp = Dispatcher()
 async def main():
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-    dp.include_router(youtube_commands.router)
+    dp.include_routers(
+        youtube_handlers.router,
+        links_handler.router,
+    )
     print("[INFO] Bot has started!")
     await dp.start_polling(bot)
 
