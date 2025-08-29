@@ -1,10 +1,7 @@
 from yt_dlp import YoutubeDL
+from ..base_parser import BaseParser
 
-
-class YoutubeDownloader:
-    def __init__(self, url: str):
-        self.url = url
-
+class YoutubeDownloader(BaseParser):
     def get_video_info(self):
         with YoutubeDL({"quiet": True, "skip_download": True}) as ydl:
             info = ydl.extract_info(self.url, download=False, process=False)

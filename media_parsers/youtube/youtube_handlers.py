@@ -10,7 +10,6 @@ import utils
 
 router = Router(name=__name__)
 
-
 class YoutubeForm(StatesGroup):
     video_url = State()
 
@@ -42,8 +41,7 @@ async def youtube_link_processing(message: Message):
             else:
                 download_type = 0  # telethon sender
 
-            btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}MB",
-                                       callback_data=f"D|{download_type}|{url}|{format[0]}")
+            btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}MB", callback_data=f"D|{download_type}|{url}|{format[0]}")
             if i % 2 == 0:
                 line = [btn]
                 if i == len(video_formats) - 1:
@@ -63,6 +61,7 @@ async def youtube_link_processing(message: Message):
     except Exception as e:
         await message.answer('Wrong url, bro :(')
         print(e)
+
 
 @router.message(YoutubeForm.video_url)
 async def youtube_url_receive(message: Message, state: FSMContext):
