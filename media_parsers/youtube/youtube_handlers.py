@@ -21,6 +21,7 @@ async def youtube_start(message: Message, state: FSMContext):
 
 
 async def youtube_link_processing(message: Message):
+    await message.answer(utils.please_wait_text)
     url = message.text
     try:
         yd = YoutubeDownloader(url)
@@ -59,7 +60,7 @@ async def youtube_link_processing(message: Message):
         )
 
     except Exception as e:
-        await message.answer('Wrong url, bro :(')
+        await message.answer(utils.bad_url)
         print(e)
 
 
