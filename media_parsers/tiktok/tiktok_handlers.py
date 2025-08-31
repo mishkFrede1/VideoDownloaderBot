@@ -20,6 +20,7 @@ async def tiktok_start(message: Message, state: FSMContext):
 
 
 async def tiktok_link_processing(message: Message):
+    await message.answer(utils.please_wait_text)
     url = message.text
     try:
         video_title = TiktokDownloader(url).download_video()
