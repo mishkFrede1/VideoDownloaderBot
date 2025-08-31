@@ -1,8 +1,9 @@
 import pyktok
 import shutil
-from ..base_parser import BaseParser
+from ..base_parsers import SimpleDownloadParser
 
-class TiktokDownloader(BaseParser):
+
+class TiktokDownloader(SimpleDownloadParser):
     def download_video(self):
         pyktok.specify_browser('firefox')
         pyktok.save_tiktok(self.url, True)

@@ -8,9 +8,9 @@ from media_parsers.youtube.youtube_handlers import youtube_link_processing
 router = Router(name=__name__)
 
 
-@router.message(F.text.regexp(re.compile(r"^(https?:\/\/)?([a-zA-Z0-9-]+\.)?[a-zA-Z0-9-]+\.(com|net|org)(\/.*)?$")))
+@router.message(F.text.regexp(re.compile(r"^(https?:\/\/)?([a-zA-Z0-9-]+\.)?[a-zA-Z0-9-]+\.(com|net|org|be)(\/.*)?$")))
 async def links_handler(message: types.Message):
-    if "youtube.com" in message.text:
+    if "youtube.com" in message.text or "youtu.be" in message.text:
         await youtube_link_processing(message)
 
     elif "instagram.com" in message.text:

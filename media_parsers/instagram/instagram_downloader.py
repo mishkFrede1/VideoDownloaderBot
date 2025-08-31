@@ -1,7 +1,7 @@
 import instaloader
-from ..base_parser import BaseParser
+from ..base_parsers import SimpleDownloadParser
 
-class InstagramDownloader(BaseParser):
+class InstagramDownloader(SimpleDownloadParser):
     def download_video(self):
         loader = instaloader.Instaloader(
             download_comments=False,
