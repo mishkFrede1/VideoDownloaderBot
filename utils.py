@@ -13,3 +13,4 @@ resolutions_16x9 = {
 
 send_link_text = "🔗 Send me the link to your video!"
 please_wait_text = "⏰ Downloading, please wait..."
+bad_url = "Wrong url, bro :("
