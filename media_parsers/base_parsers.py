@@ -23,6 +23,15 @@ class ResolutionDownloadParser(ABC, BaseParser):
         """
 
 
+class AudioOnlyDownloadParser(ABC, BaseParser):
+    @abstractmethod
+    def download_video_audio_only(self) -> (dict, str):
+        """
+        Write here your code to download video's audio only and send its filename or a dictionary with necessary data, including filename
+        :return: dictionary with data or a string with audio's filename
+        """
+
+
 class VideoInfoParser(ABC, BaseParser):
     @abstractmethod
     def get_video_info(self) -> dict:

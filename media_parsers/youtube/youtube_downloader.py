@@ -1,14 +1,14 @@
 from yt_dlp import YoutubeDL
-from ..base_parsers import ResolutionDownloadParser, VideoInfoParser
+from ..base_parsers import ResolutionDownloadParser, VideoInfoParser, AudioOnlyDownloadParser
 
 
-class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser):
-    def get_video_info(self):
-        with YoutubeDL({"quiet": True, "skip_download": True}) as ydl:
-            info = ydl.extract_info(self.url, download=False, process=False)
+class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser, AudioOnlyDownloadParser):
+    def get_video_info(self): #com.google.android.youtube/18.20.36 (Linux; U; Android 11)
+        with YoutubeDL({"quiet": True, "skip_download": True, "http_headers": {"User-Agent": "com.google.android.youtube/18.20.36 (Linux; U; Android 11)"}, "extractor_args": {"youtube": [f"player_client=android"]}}) as ydl:
+            info = ydl.extract_info(self.url, download=False)
             title = info.get("title")
             thumbnail = info.get("thumbnail")
-            uploader = info.get("uploader")
+            uploader = info.get("uploader_id")[1:]
             duration = info.get("duration")
             formats = []
             for format in info.get("formats", []):
@@ -35,8 +35,7 @@ class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser):
             }],
         }
         with YoutubeDL(ydl_opts) as ydl:
-            ydl.download([self.url])
-            info = ydl.extract_info(self.url, download=False, process=False)
+            info = ydl.extract_info(self.url, download=True)
             title = info.get("title")
             duration = info.get("duration")
             thumbnail = info.get("thumbnail")
@@ -45,4 +44,26 @@ class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser):
                 "ext": "mp4",
                 "duration": duration,
                 "thumbnail": thumbnail
+            }
+
+    def download_video_audio_only(self):
+        ydl_opts = {
+            'extract_audio': True,
+            'format': 'bestaudio',
+            'outtmpl': 'vids/%(title)s_audio_only.%(ext)s',
+            'merge_output_format': 'mp3',
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp3',
+            }],
+        }
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(self.url, download=True)
+            title = info.get("title")
+            uploader = info.get("uploader")
+            duration = info.get("duration")
+            return {
+                "title": f"{title}_audio_only.mp3",
+                "uploader": uploader,
+                "duration": duration,
             }

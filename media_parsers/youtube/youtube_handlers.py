@@ -21,7 +21,6 @@ async def youtube_start(message: Message, state: FSMContext):
 
 
 async def youtube_link_processing(message: Message):
-    await message.answer(utils.please_wait_text)
     url = message.text
     try:
         yd = YoutubeDownloader(url)
@@ -38,9 +37,13 @@ async def youtube_link_processing(message: Message):
         line = []
         for i, format in enumerate(sorted(video_formats, reverse=True)):
             if format[1] < 49.5:
-                download_type = 1  # bot.send_video (fastest)
+                download_type = 1
             else:
-                download_type = 0  # telethon sender
+                download_type = 0
+            # There are 3 download_types:
+            #  0 - With telethon sender for big files
+            #  1 - Without telethon sender
+            #  2 - For audio only files
 
             btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}MB", callback_data=f"D|{download_type}|{url}|{format[0]}")
             if i % 2 == 0:
@@ -51,6 +54,7 @@ async def youtube_link_processing(message: Message):
                 line.append(btn)
                 res.append(line)
                 line = []
+        res.append([InlineKeyboardButton(text="🔈 MP3", callback_data=f"D|2|{url}")])
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=res)
         await message.answer_photo(
@@ -75,18 +79,22 @@ async def download_video_by_callback(query: CallbackQuery, bot: Bot):
     elements = query.data.split("|")
     await bot.send_message(chat_id=query.from_user.id, text=utils.please_wait_text)
     yd = YoutubeDownloader(elements[2])
-    file_data = yd.download_video_by_resolution(elements[3])
-    h = int(elements[3])
-    w = utils.resolutions_16x9[h]
-
-    filename = f"vids/{file_data['title']}_{elements[3]}.{file_data['ext']}"
-    if elements[0] == 0:
-        await send_video_telethon(query.from_user.id, filename, w, h, file_data['duration'], )
+    if elements[1] == '2':
+        file_data = yd.download_video_audio_only()
+        await bot.send_audio(query.from_user.id, FSInputFile(f"vids/{file_data['title']}"), performer=file_data["uploader"], duration=file_data["duration"])
     else:
-        try:
-            await bot.send_video(query.from_user.id, FSInputFile(filename), width=w, height=h, duration=file_data['duration'], supports_streaming=True, thumbnail=URLInputFile(file_data['thumbnail']))
-        except exceptions.TelegramEntityTooLarge:
-            await send_video_telethon(query.from_user.id, filename, w, h, file_data['duration'])
+        file_data = yd.download_video_by_resolution(elements[3])
+        h = int(elements[3])
+        w = utils.resolutions_16x9[h]
+
+        filename = f"vids/{file_data['title']}_{elements[3]}.{file_data['ext']}"
+        if elements[1] == '0':
+            await send_video_telethon(query.from_user.id, filename, w, h, file_data['duration'], )
+        else:
+            try:
+                await bot.send_video(query.from_user.id, FSInputFile(filename), width=w, height=h, duration=file_data['duration'], supports_streaming=True, thumbnail=URLInputFile(file_data['thumbnail']))
+            except exceptions.TelegramEntityTooLarge:
+                await send_video_telethon(query.from_user.id, filename, w, h, file_data['duration'])
 
 
 @router.message(F.video)
