@@ -48,13 +48,19 @@ async def youtube_link_processing(message: Message):
             btn = InlineKeyboardButton(text=f"{format[0]}p {format[1]}MB", callback_data=f"D|{download_type}|{url}|{format[0]}")
             if i % 2 == 0:
                 line = [btn]
-                if i == len(video_formats) - 1:
-                    res.append(line)
+                # if i == len(video_formats) - 1:
+                #     res.append(line)
             else:
                 line.append(btn)
                 res.append(line)
                 line = []
-        res.append([InlineKeyboardButton(text="🔈 MP3", callback_data=f"D|2|{url}")])
+        if line != []:
+            line.append(InlineKeyboardButton(text="🔈 MP3", callback_data=f"D|2|{url}"))
+            res.append(line)
+        else:
+            res.append([InlineKeyboardButton(text="🔈 MP3", callback_data=f"D|2|{url}")])
+
+        res.append([InlineKeyboardButton(text=f"👤 {video_data['uploader']}", url=video_data["uploader_url"])])
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=res)
         await message.answer_photo(
@@ -77,11 +83,12 @@ async def youtube_url_receive(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("D"))
 async def download_video_by_callback(query: CallbackQuery, bot: Bot):
     elements = query.data.split("|")
+    await bot.delete_message(chat_id=query.from_user.id, message_id=query.message.message_id)
     await bot.send_message(chat_id=query.from_user.id, text=utils.please_wait_text)
     yd = YoutubeDownloader(elements[2])
     if elements[1] == '2':
         file_data = yd.download_video_audio_only()
-        await bot.send_audio(query.from_user.id, FSInputFile(f"vids/{file_data['title']}"), performer=file_data["uploader"], duration=file_data["duration"])
+        await bot.send_audio(query.from_user.id, FSInputFile(f"vids/{file_data['title']}"), performer=file_data["uploader"], duration=file_data["duration"], thumbnail=URLInputFile(file_data['thumbnail']))
     else:
         file_data = yd.download_video_by_resolution(elements[3])
         h = int(elements[3])

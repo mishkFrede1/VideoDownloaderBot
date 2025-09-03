@@ -4,11 +4,12 @@ from ..base_parsers import ResolutionDownloadParser, VideoInfoParser, AudioOnlyD
 
 class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser, AudioOnlyDownloadParser):
     def get_video_info(self): #com.google.android.youtube/18.20.36 (Linux; U; Android 11)
-        with YoutubeDL({"quiet": True, "skip_download": True, "http_headers": {"User-Agent": "com.google.android.youtube/18.20.36 (Linux; U; Android 11)"}, "extractor_args": {"youtube": [f"player_client=android"]}}) as ydl:
+        with YoutubeDL({"quiet": True, "skip_download": True, "http_headers": {"User-Agent": "com.google.android.youtube/18.20.36 (Linux; U; Android 11)"}, "extractor_args": {"youtube": [f"player_client=android"]}, 'cookiesfrombrowser': ('firefox',)}) as ydl:
             info = ydl.extract_info(self.url, download=False)
             title = info.get("title")
             thumbnail = info.get("thumbnail")
             uploader = info.get("uploader_id")[1:]
+            uploader_url = info.get("uploader_url")
             duration = info.get("duration")
             formats = []
             for format in info.get("formats", []):
@@ -19,6 +20,7 @@ class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser, AudioOnlyDown
                 "title": title,
                 "thumbnail": thumbnail,
                 "uploader": uploader,
+                "uploader_url": uploader_url,
                 "duration": duration,
                 "formats": formats
             }
@@ -33,6 +35,7 @@ class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser, AudioOnlyDown
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': 'mp4',
             }],
+            'cookiesfrombrowser': ('firefox',),
         }
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(self.url, download=True)
@@ -56,14 +59,17 @@ class YoutubeDownloader(ResolutionDownloadParser, VideoInfoParser, AudioOnlyDown
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': 'mp3',
             }],
+            'cookiesfrombrowser': ('firefox',),
         }
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(self.url, download=True)
             title = info.get("title")
             uploader = info.get("uploader")
             duration = info.get("duration")
+            thumbnail = info.get("thumbnail")
             return {
                 "title": f"{title}_audio_only.mp3",
                 "uploader": uploader,
                 "duration": duration,
+                "thumbnail": thumbnail
             }
