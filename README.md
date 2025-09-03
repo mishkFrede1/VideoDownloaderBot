@@ -20,14 +20,26 @@
   - Instagram  
 - Sends the video or audio file directly to the chat  
 - Simple interface with link recognition
-- Supports sending videos above 50mb with [telethon](https://docs.telethon.dev/en/stable)
+- Supports sending videos above Telegram limits (50mb) with [telethon](https://docs.telethon.dev/en/stable)
 
 ---
 ## Examples 
 
-<p align="center">
-  <img src="assets/demo.gif" alt="example_youtube"/>
-</p>
+### Youtube 
+![youtube1](.github/youtube.PNG)
+<br>
+
+### Youtube audio downloading
+![youtube2](.github/example_youtube.gif)
+<br>
+
+### Instagram downloading
+![instagram](.github/example_instagram.gif)
+<br>
+
+### TikTok downloading
+![tiktok](.github/example_tiktok.gif)
+
 
 ---
 
@@ -67,3 +79,15 @@ PHONE=your_phone_number
 python main.py
 ```
 
+## 🛠 Usage
+
+Send a video link (YouTube / TikTok / Instagram) to the bot. It will recognize your platform and download it.
+
+The bot will download and send you the video file.
+
+Commands:
+- /start - Start bot
+- /help - Show help instructions
+- /youtube – Download video/audio from YouTube
+- /inst – Download video from Instagram
+- /tiktok – Download video from TikTok
